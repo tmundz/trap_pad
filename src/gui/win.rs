@@ -9,8 +9,7 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::EventPump;
 
-use crate::editor::cursor::Cursor;
-use crate::editor::line::Line;
+use crate::editor::Editor;
 
 // if I want to make it more usable it will need to adapt and be more flexible
 pub const WIDTH: u32 = 800;
@@ -36,8 +35,7 @@ pub fn win_init(sdl_context: &sdl2::Sdl) -> Result<(Canvas<Window>, EventPump), 
 pub fn run_loop(
     mut canvas: Canvas<Window>,
     mut event_pump: EventPump,
-    cursor: &mut Cursor,
-    line: Line,
+    editor: &mut Editor,
 ) -> Result<(), String> {
     // Main loop
     'running: loop {
@@ -48,18 +46,18 @@ pub fn run_loop(
             } = event
             {
                 match keycode {
-                    Keycode::Left => cursor.move_left(),
-                    Keycode::Right => cursor.move_right(),
-                    Keycode::Up => cursor.move_up(),
-                    Keycode::Down => cursor.move_down(),
+                    Keycode::Left => editor.get_cursor_mut().move_left(),
+                    Keycode::Right => editor.get_cursor_mut().move_right(),
+                    Keycode::Up => editor.get_cursor_mut().move_up(),
+                    Keycode::Down => editor.get_cursor_mut().move_down(),
                     Keycode::Escape => break 'running,
                     _ => {}
                 }
             }
         }
 
-        draw_line(&mut canvas, &line)?;
-        draw_cursor(&mut canvas, cursor)?;
+        draw_line(&mut canvas, editor)?;
+        draw_cursor(&mut canvas, editor)?;
         std::thread::sleep(Duration::from_millis(16));
 
         canvas.present();
@@ -67,16 +65,16 @@ pub fn run_loop(
     Ok(())
 }
 
-fn draw_cursor(canvas: &mut Canvas<Window>, cursor: &mut Cursor) -> Result<(), String> {
-    cursor.update();
+fn draw_cursor(canvas: &mut Canvas<Window>, editor: &mut Editor) -> Result<(), String> {
+    editor.get_cursor_mut().update();
 
-    if cursor.get_visible() {
+    if editor.get_cursor_mut().get_visible() {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         let cursor_rect = sdl2::rect::Rect::new(
-            cursor.get_col(),
-            cursor.get_row(),
-            cursor.get_width(),
-            cursor.get_height(),
+            editor.get_cursor_mut().get_col(),
+            editor.get_cursor_mut().get_row(),
+            editor.get_cursor_mut().get_width(),
+            editor.get_cursor_mut().get_height(),
         );
         canvas.fill_rect(cursor_rect)?;
     }
@@ -84,13 +82,17 @@ fn draw_cursor(canvas: &mut Canvas<Window>, cursor: &mut Cursor) -> Result<(), S
     Ok(())
 }
 
-fn draw_line(canvas: &mut Canvas<Window>, line: &Line) -> Result<(), String> {
+fn draw_line(canvas: &mut Canvas<Window>, editor: &mut Editor) -> Result<(), String> {
     canvas.set_draw_color(Color::RGB(255, 255, 255));
     canvas.clear();
 
     canvas.set_draw_color(Color::RGBA(49, 25, 109, 128));
-    let cursor_rect =
-        sdl2::rect::Rect::new(0, 20, line.clone().get_width(), line.clone().get_height());
-    canvas.fill_rect(cursor_rect)?;
+    let line_rect = sdl2::rect::Rect::new(
+        0,
+        20,
+        editor.get_line_mut().clone().get_width(),
+        editor.get_line_mut().clone().get_height(),
+    );
+    canvas.fill_rect(line_rect)?;
     Ok(())
 }
