@@ -19,6 +19,8 @@ pub struct Cursor {
     height: u32,
     visible: bool,
     recent_blink: time::Instant,
+    prev_col_index: i32, // will need to update on left right movement
+    cur_row_index: i32,
 }
 
 impl Cursor {
@@ -30,6 +32,8 @@ impl Cursor {
             height,
             visible: true,
             recent_blink: time::Instant::now(),
+            prev_col_index: 0,
+            cur_row_index: 0,
         }
     }
 
@@ -84,12 +88,15 @@ impl Cursor {
     pub fn get_width(self) -> u32 {
         self.width
     }
+
     pub fn get_height(self) -> u32 {
         self.height
     }
+
     pub fn get_row(self) -> i32 {
         self.row
     }
+
     pub fn get_col(self) -> i32 {
         self.col
     }

@@ -10,6 +10,7 @@ use sdl2::video::Window;
 use sdl2::EventPump;
 
 use crate::editor::cursor::Cursor;
+use crate::editor::line::Line;
 
 // if I want to make it more usable it will need to adapt and be more flexible
 pub const WIDTH: u32 = 800;
@@ -25,8 +26,9 @@ pub fn win_init(sdl_context: &sdl2::Sdl) -> Result<(Canvas<Window>, EventPump), 
         .build()
         .map_err(|e| e.to_string())?;
 
-    let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let event_pump = sdl_context.event_pump()?;
+    canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
 
     Ok((canvas, event_pump))
 }
@@ -35,6 +37,7 @@ pub fn run_loop(
     mut canvas: Canvas<Window>,
     mut event_pump: EventPump,
     cursor: &mut Cursor,
+    line: Line,
 ) -> Result<(), String> {
     // Main loop
     'running: loop {
@@ -55,16 +58,17 @@ pub fn run_loop(
             }
         }
 
-        draw(&mut canvas, cursor)?;
+        draw_line(&mut canvas, &line)?;
+        draw_cursor(&mut canvas, cursor)?;
         std::thread::sleep(Duration::from_millis(16));
+
+        canvas.present();
     }
     Ok(())
 }
 
-fn draw(canvas: &mut Canvas<Window>, cursor: &mut Cursor) -> Result<(), String> {
+fn draw_cursor(canvas: &mut Canvas<Window>, cursor: &mut Cursor) -> Result<(), String> {
     cursor.update();
-    canvas.set_draw_color(Color::RGB(255, 255, 255));
-    canvas.clear();
 
     if cursor.get_visible() {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
@@ -77,6 +81,16 @@ fn draw(canvas: &mut Canvas<Window>, cursor: &mut Cursor) -> Result<(), String> 
         canvas.fill_rect(cursor_rect)?;
     }
 
-    canvas.present();
+    Ok(())
+}
+
+fn draw_line(canvas: &mut Canvas<Window>, line: &Line) -> Result<(), String> {
+    canvas.set_draw_color(Color::RGB(255, 255, 255));
+    canvas.clear();
+
+    canvas.set_draw_color(Color::RGBA(49, 25, 109, 128));
+    let cursor_rect =
+        sdl2::rect::Rect::new(0, 20, line.clone().get_width(), line.clone().get_height());
+    canvas.fill_rect(cursor_rect)?;
     Ok(())
 }
