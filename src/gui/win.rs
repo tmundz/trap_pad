@@ -1,5 +1,6 @@
 extern crate sdl2;
 
+use std::borrow::Borrow;
 use std::time::Duration;
 
 use sdl2::event::Event;
@@ -46,21 +47,21 @@ pub fn run_loop(
             } = event
             {
                 match keycode {
-                    Keycode::Left => editor.get_cursor_mut().move_left(),
-                    Keycode::Right => editor.get_cursor_mut().move_right(),
-                    Keycode::Up => editor.get_cursor_mut().move_up(),
-                    Keycode::Down => editor.get_cursor_mut().move_down(),
+                    Keycode::Left => editor.move_left(),
+                    Keycode::Right => editor.move_right(),
+                    Keycode::Up => editor.move_up(),
+                    Keycode::Down => editor.move_down(),
                     Keycode::Escape => break 'running,
                     _ => {}
                 }
             }
         }
-
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.clear();
         draw_line(&mut canvas, editor)?;
         draw_cursor(&mut canvas, editor)?;
-        std::thread::sleep(Duration::from_millis(16));
-
         canvas.present();
+        std::thread::sleep(Duration::from_millis(16));
     }
     Ok(())
 }
@@ -83,16 +84,19 @@ fn draw_cursor(canvas: &mut Canvas<Window>, editor: &mut Editor) -> Result<(), S
 }
 
 fn draw_line(canvas: &mut Canvas<Window>, editor: &mut Editor) -> Result<(), String> {
-    canvas.set_draw_color(Color::RGB(255, 255, 255));
-    canvas.clear();
-
-    canvas.set_draw_color(Color::RGBA(49, 25, 109, 128));
-    let line_rect = sdl2::rect::Rect::new(
-        0,
-        20,
-        editor.get_line_mut().clone().get_width(),
-        editor.get_line_mut().clone().get_height(),
-    );
-    canvas.fill_rect(line_rect)?;
+    for i in 0..editor.get_lines_mut().len() {
+        let line = editor.get_line(i).clone();
+        // println!("{}", line.cursor_is_present());
+        if editor.get_line(i).cursor_is_present() {
+            canvas.set_draw_color(Color::RGBA(49, 25, 109, 128));
+            let line_rect = sdl2::rect::Rect::new(
+                0,
+                line.get_cur_min() as i32,
+                line.get_width(),
+                line.get_height(),
+            );
+            canvas.fill_rect(line_rect)?;
+        }
+    }
     Ok(())
 }

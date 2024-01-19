@@ -8,7 +8,7 @@ use std::time;
 
 use crate::gui::win::{HEIGHT, WIDTH};
 
-const STEP: i32 = 20;
+pub const STEP: i32 = 20;
 const BLINK: time::Duration = time::Duration::from_millis(500);
 
 #[derive(Copy, Clone)]
@@ -19,8 +19,8 @@ pub struct Cursor {
     height: u32,
     visible: bool,
     recent_blink: time::Instant,
-    prev_col_index: i32, // will need to update on left right movement
-    cur_row_index: i32,
+    cur_col_index: usize, // will need to update on left right movement
+    cur_row_index: usize,
 }
 
 impl Cursor {
@@ -32,7 +32,7 @@ impl Cursor {
             height,
             visible: true,
             recent_blink: time::Instant::now(),
-            prev_col_index: 0,
+            cur_col_index: 0,
             cur_row_index: 0,
         }
     }
@@ -49,6 +49,7 @@ impl Cursor {
             self.recent_blink = time::Instant::now();
         }
     }
+
     /*
      * MOVING FUNCTIONS
      */
@@ -60,26 +61,20 @@ impl Cursor {
     }
 
     pub fn move_right(&mut self) {
-        if !self.col_edge(1) {
-            self.col += STEP;
-        }
+        self.col += STEP;
         //add logic to stop at where the line col max is
         //only update line col max if there is an ascii char typed
     }
 
     // add logic to remember the position it should be at when scrolling down
     pub fn move_up(&mut self) {
-        if !self.row_edge(0) {
-            self.row -= STEP;
-        }
-        // add logic to stop at the top
+        self.row -= STEP;
+        self.cur_row_index -= 1;
     }
 
     pub fn move_down(&mut self) {
-        if !self.row_edge(1) {
-            self.row += STEP;
-        }
-        // will need to add scroll
+        self.row += STEP;
+        self.cur_row_index += 1;
     }
 
     /*
@@ -105,16 +100,18 @@ impl Cursor {
         self.visible
     }
 
-    //Private
-    //
+    pub fn get_cur_row_index(self) -> usize {
+        self.cur_row_index
+    }
+
     //TODO MAY NEED TO CHANGE IF I ADD SCROLLING
-    fn row_edge(self, flag: i32) -> bool {
+    pub fn row_edge(self, flag: i32) -> bool {
         //0 if left
         //1 if right
         (flag == 0 && (self.row - STEP) <= 0) || (flag == 1 && (self.row + STEP) >= HEIGHT as i32)
     }
 
-    fn col_edge(self, flag: i32) -> bool {
+    pub fn col_edge(self, flag: i32) -> bool {
         //0 if up
         //1 if down
         (flag == 0 && (self.col - STEP) <= 0) || (flag == 1 && (self.col + STEP) >= WIDTH as i32)
